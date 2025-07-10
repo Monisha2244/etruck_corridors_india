@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Truck Charging Sites - India</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 2px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #219a52;
+            transform: translateY(-2px);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .map-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #3498db;
+            background: transparent;
+            color: #3498db;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .legend {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .legend h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .route-1 { background: #e74c3c; }
+        .route-2 { background: #3498db; }
+        .route-3 { background: #2ecc71; }
+        .route-4 { background: #f39c12; }
+        .route-5 { background: #9b59b6; }
+        .route-other { background: #95a5a6; }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .nav-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .map-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .map-controls {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            #map {
+                height: 400px;
+            }
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+
+        .popup-content {
+            max-width: 300px;
+        }
+
+        .popup-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .popup-info {
+            font-size: 12px;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .popup-renewable {
+            background: #e8f5e8;
+            padding: 5px 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #27ae60;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">
+                    <h1>Electric Truck Charging Network</h1>
+                    <p>India's Freight Corridor Infrastructure</p>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <a href="data.html" class="btn btn-primary">📊 View Database</a>
+                <a href="traffic.html" class="btn btn-secondary">🚛 Live Traffic</a>
+                <button class="btn btn-secondary" onclick="exportMapData()">📥 Export Data</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">120</div>
+                <div class="stat-label">Charging Sites</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24</div>
+                <div class="stat-label">Freight Routes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">89</div>
+                <div class="stat-label">Total Substations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">2,850</div>
+                <div class="stat-label">Solar MW Potential</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1,920</div>
+                <div class="stat-label">Wind MW Potential</div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div class="map-header">
+                <h2 class="map-title">🗺️ Interactive Charging Sites Map</h2>
+                <div class="map-controls">
+                    <button class="filter-btn active" onclick="filterRoute('all')">All Routes</button>
+                    <button class="filter-btn" onclick="filterRoute('Dhanbad-Ranchi-Jamshedpur')">Dhanbad-Ranchi-Jamshedpur</button>
+                    <button class="filter-btn" onclick="filterRoute('Kolkata-Haldia')">Kolkata-Haldia</button>
+                    <button class="filter-btn" onclick="filterRoute('Paradeep-Barbil')">Paradeep-Barbil</button>
+                    <button class="filter-btn" onclick="filterRoute('Dhanbad-Kolkata')">Dhanbad-Kolkata</button>
+                    <button class="filter-btn" onclick="filterRoute('Visakhapatnam-Brahmapur')">Visakhapatnam-Brahmapur</button>
+                    <button class="filter-btn" onclick="filterRoute('Delhi-Jaipur')">Delhi-Jaipur</button>
+                    <button class="filter-btn" onclick="filterRoute('Delhi-Agra')">Delhi-Agra</button>
+                    <button class="filter-btn" onclick="filterRoute('Delhi-Chandigarh')">Delhi-Chandigarh</button>
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <div class="legend">
+            <h3>🎨 Route Legend</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color route-1"></div>
+                    <span>Dhanbad-Ranchi-Jamshedpur (266 km)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color route-2"></div>
+                    <span>Kolkata-Haldia (122 km)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color route-3"></div>
+                    <span>Paradeep-Barbil (302 km)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color route-4"></div>
+                    <span>Dhanbad-Kolkata (273 km)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color route-5"></div>
+                    <span>Visakhapatnam-Brahmapur (274 km)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color route-other"></div>
+                    <span>Other Routes (19 more routes)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data/main.js"></script>
+</body>
+</html>
