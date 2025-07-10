@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Truck Traffic - India Freight Corridors</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #2980b9;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #27ae60;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .traffic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .route-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .route-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .route-header {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .route-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .route-distance {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .traffic-data {
+            padding: 20px;
+        }
+
+        .traffic-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .traffic-high { color: #e74c3c; }
+        .traffic-medium { color: #f39c12; }
+        .traffic-low { color: #27ae60; }
+
+        .traffic-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .traffic-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .fill-high { background: #e74c3c; }
+        .fill-medium { background: #f39c12; }
+        .fill-low { background: #27ae60; }
+
+        .disclaimer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px 30px;
+            margin: 20px 30px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .disclaimer strong {
+            color: #d63031;
+        }
+
+        @media (max-width: 768px) {
+            .traffic-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚛 Real-Time Truck Traffic Monitor</h1>
+            <p>Live traffic data for India's major freight corridors</p>
+        </div>
+
+        <div class="controls">
+            <a href="index.html" class="back-btn">🗺️ Back to Map</a>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>LIVE DATA</span>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <strong>⚠️ Demo Notice:</strong> This is a demonstration with simulated traffic data. 
+            Real implementation would require integration with traffic APIs like Google Traffic API, 
+            HERE Traffic API, or government transport databases for actual live data.
+        </div>
+
+        <div class="traffic-grid" id="trafficGrid">
+            <!-- Traffic data will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Simulated real-time traffic data for the 24 routes
+        const trafficData = [
+            {
+                route: "Dhanbad – Ranchi – Jamshedpur",
+                distance: "266 km",
+                currentTraffic: "Medium",
+                truckCount: 1250,
+                avgSpeed: 45,
+                congestionLevel: 65,
+                estimatedTime: "6.2 hours"
+            },
+            {
+                route: "Kolkata – Haldia",
+                distance: "122 km",
+                currentTraffic: "High",
+                truckCount: 890,
+                avgSpeed: 32,
+                congestionLevel: 85,
+                estimatedTime: "4.1 hours"
+            },
+            {
+                route: "Paradeep – Barbil",
+                distance: "302 km",
+                currentTraffic: "Low",
+                truckCount: 650,
+                avgSpeed: 58,
+                congestionLevel: 35,
+                estimatedTime: "5.8 hours"
+            },
+            {
+                route: "Dhanbad – Kolkata",
+                distance: "273 km",
+                currentTraffic: "Medium",
+                truckCount: 1100,
+                avgSpeed: 42,
+                congestionLevel: 70,
+                estimatedTime: "6.8 hours"
+            },
+            {
+                route: "Visakhapatnam – Brahmapur",
+                distance: "274 km",
+                currentTraffic: "Low",
+                truckCount: 720,
+                avgSpeed: 55,
+                congestionLevel: 40,
+                estimatedTime: "5.2 hours"
+            },
+            {
+                route: "Delhi – Jaipur",
+                distance: "276 km",
+                currentTraffic: "High",
+                truckCount: 1850,
+                avgSpeed: 38,
+                congestionLevel: 90,
+                estimatedTime: "7.8 hours"
+            },
+            {
+                route: "Delhi – Agra",
+                distance: "229 km",
+                currentTraffic: "High",
+                truckCount: 1650,
+                avgSpeed: 35,
+                congestionLevel: 88,
+                estimatedTime: "6.9 hours"
+            },
+            {
+                route: "Delhi – Chandigarh",
+                distance: "255 km",
+                currentTraffic: "Medium",
+                truckCount: 1200,
+                avgSpeed: 48,
+                congestionLevel: 60,
+                estimatedTime: "5.6 hours"
+            },
+            {
+                route: "Ambala – Jalandhar",
+                distance: "173 km",
+                currentTraffic: "Low",
+                truckCount: 580,
+                avgSpeed: 62,
+                congestionLevel: 30,
+                estimatedTime: "3.1 hours"
+            },
+            {
+                route: "Chandigarh – Ludhiana – Amritsar",
+                distance: "237 km",
+                currentTraffic: "Medium",
+                truckCount: 950,
+                avgSpeed: 44,
+                congestionLevel: 65,
+                estimatedTime: "5.7 hours"
+            },
+            {
+                route: "Vijayawada – Hyderabad",
+                distance: "293 km",
+                currentTraffic: "Medium",
+                truckCount: 1300,
+                avgSpeed: 46,
+                congestionLevel: 68,
+                estimatedTime: "6.7 hours"
+            },
+            {
+                route: "Chennai – Bengaluru",
+                distance: "330 km",
+                currentTraffic: "High",
+                truckCount: 1950,
+                avgSpeed: 36,
+                congestionLevel: 92,
+                estimatedTime: "9.6 hours"
+            },
+            {
+                route: "Vijayawada – Visakhapatnam",
+                distance: "353 km",
+                currentTraffic: "Low",
+                truckCount: 780,
+                avgSpeed: 54,
+                congestionLevel: 42,
+                estimatedTime: "6.8 hours"
+            },
+            {
+                route: "Coimbatore – Salem",
+                distance: "169 km",
+                currentTraffic: "Medium",
+                truckCount: 680,
+                avgSpeed: 47,
+                congestionLevel: 58,
+                estimatedTime: "3.8 hours"
+            },
+            {
+                route: "Chennai – Ongole",
+                distance: "300 km",
+                currentTraffic: "Medium",
+                truckCount: 1100,
+                avgSpeed: 43,
+                congestionLevel: 72,
+                estimatedTime: "7.3 hours"
+            },
+            {
+                route: "Coimbatore – Kochi",
+                distance: "191 km",
+                currentTraffic: "Low",
+                truckCount: 520,
+                avgSpeed: 59,
+                congestionLevel: 35,
+                estimatedTime: "3.4 hours"
+            },
+            {
+                route: "Hubballi – Chitradurga",
+                distance: "196 km",
+                currentTraffic: "Low",
+                truckCount: 450,
+                avgSpeed: 61,
+                congestionLevel: 28,
+                estimatedTime: "3.4 hours"
+            },
+            {
+                route: "Chennai – Villupuram",
+                distance: "160 km",
+                currentTraffic: "High",
+                truckCount: 1250,
+                avgSpeed: 34,
+                congestionLevel: 86,
+                estimatedTime: "4.9 hours"
+            },
+            {
+                route: "Ahmedabad – Mundra",
+                distance: "293 km",
+                currentTraffic: "Medium",
+                truckCount: 1400,
+                avgSpeed: 41,
+                congestionLevel: 75,
+                estimatedTime: "7.5 hours"
+            },
+            {
+                route: "JNPT/Navi Mumbai – Pune",
+                distance: "141 km",
+                currentTraffic: "High",
+                truckCount: 2100,
+                avgSpeed: 29,
+                congestionLevel: 95,
+                estimatedTime: "5.1 hours"
+            },
+            {
+                route: "Surat – Vadodara",
+                distance: "131 km",
+                currentTraffic: "Medium",
+                truckCount: 980,
+                avgSpeed: 49,
+                congestionLevel: 62,
+                estimatedTime: "2.8 hours"
+            },
+            {
+                route: "Pune – Nashik",
+                distance: "215 km",
+                currentTraffic: "Medium",
+                truckCount: 1150,
+                avgSpeed: 45,
+                congestionLevel: 66,
+                estimatedTime: "5.0 hours"
+            },
+            {
+                route: "Mumbai – Nashik",
+                distance: "185 km",
+                currentTraffic: "High",
+                truckCount: 1750,
+                avgSpeed: 33,
+                congestionLevel: 89,
+                estimatedTime: "5.9 hours"
+            },
+            {
+                route: "Pune – Kolhapur",
+                distance: "233 km",
+                currentTraffic: "Low",
+                truckCount: 620,
+                avgSpeed: 56,
+                congestionLevel: 38,
+                estimatedTime: "4.4 hours"
+            }
+        ];
+
+        function getTrafficClass(level) {
+            if (level === "High") return "traffic-high";
+            if (level === "Medium") return "traffic-medium";
+            return "traffic-low";
+        }
+
+        function getFillClass(level) {
+            if (level === "High") return "fill-high";
+            if (level === "Medium") return "fill-medium";
+            return "fill-low";
+        }
+
+        function populateTrafficData() {
+            const grid = document.getElementById('trafficGrid');
+            
+            trafficData.forEach(route => {
+                const card = document.createElement('div');
+                card.className = 'route-card';
+                
+                card.innerHTML = `
+                    <div class="route-header">
+                        <div class="route-name">${route.route}</div>
+                        <div class="route-distance">${route.distance}</div>
+                    </div>
+                    <div class="traffic-data">
+                        <div class="traffic-metric">
+                            <span class="metric-label">🚛 Active Trucks</span>
+                            <span class="metric-value">${route.truckCount.toLocaleString()}</span>
+                        </div>
+                        <div class="traffic-metric">
+                            <span class="metric-label">⚡ Avg Speed</span>
+                            <span class="metric-value">${route.avgSpeed} km/h</span>
+                        </div>
+                        <div class="traffic-metric">
+                            <span class="metric-label">⏱️ Est. Time</span>
+                            <span class="metric-value">${route.estimatedTime}</span>
+                        </div>
+                        <div class="traffic-metric">
+                            <span class="metric-label">🚦 Traffic Status</span>
+                            <span class="metric-value ${getTrafficClass(route.currentTraffic)}">${route.currentTraffic}</span>
+                        </div>
+                        <div class="traffic-bar">
+                            <div class="traffic-fill ${getFillClass(route.currentTraffic)}" 
+                                 style="width: ${route.congestionLevel}%"></div>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Simulate real-time updates
+        function updateTrafficData() {
+            trafficData.forEach(route => {
+                // Simulate small random changes
+                route.truckCount += Math.floor((Math.random() - 0.5) * 100);
+                route.avgSpeed += Math.floor((Math.random() - 0.5) * 10);
+                route.congestionLevel += Math.floor((Math.random() - 0.5) * 20);
+                
+                // Keep values within realistic bounds
+                route.truckCount = Math.max(200, Math.min(2500, route.truckCount));
+                route.avgSpeed = Math.max(25, Math.min(70, route.avgSpeed));
+                route.congestionLevel = Math.max(20, Math.min(100, route.congestionLevel));
+                
+                // Update traffic status based on congestion
+                if (route.congestionLevel > 80) route.currentTraffic = "High";
+                else if (route.congestionLevel > 50) route.currentTraffic = "Medium";
+                else route.currentTraffic = "Low";
+            });
+            
+            // Refresh the display
+            document.getElementById('trafficGrid').innerHTML = '';
+            populateTrafficData();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            populateTrafficData();
+            
+            // Update every 30 seconds to simulate real-time data
+            setInterval(updateTrafficData, 30000);
+        });
+    </script>
+</body>
+</html>
