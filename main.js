@@ -1,10 +1,3 @@
-window.addEventListener("DOMContentLoaded", function () {
-    var map = L.map('map').setView([23.5937, 80.9629], 5);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
 // Initialize the map
 let map = L.map('map').setView([20.5937, 78.9629], 5);
 
